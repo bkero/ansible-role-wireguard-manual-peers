@@ -1,0 +1,45 @@
+---
+
+- name: Add wireguard PPA
+  apt_repository:
+    repo: 'ppa:wireguard/wireguard'
+
+- name: Install packages
+  apt:
+    update_cache: yes
+    state: present
+    name: ['linux-headers-generic', 'wireguard-dkms', 'wireguard-tools']
+
+- name: Check private key file
+  stat:
+    path: /etc/wireguard/private_key_{{ interface }}
+  register: private_key
+
+- name: Generate private key
+  shell: "(umask 077; wg genkey | tee /etc/wireguard/private_key_{{ interface }} | wg pubkey > /etc/wireguard/public_key_{{ interface }})"
+  when: not private_key.stat.exists
+  notify: Restart Wireguard service
+
+- name: Read private key contents
+  slurp:
+    path: /etc/wireguard/private_key_{{ interface }}
+  register: private_key
+
+- name: Read public key file
+  slurp:
+    path: /etc/wireguard/public_key_{{ interface }}
+  register: public_key
+
+- name: Write out interface file
+  template:
+    src: interface.j2
+    dest: /etc/wireguard/{{ interface }}.conf
+    mode: 0700
+    user: root
+    group: root
+
+- name: Ensure the wg-quick service is started on boot and now
+  service:
+    name: wg-quick@{{ interface }}
+    enabled: true
+    state: started

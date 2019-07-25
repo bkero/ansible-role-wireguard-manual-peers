@@ -1,0 +1,12 @@
+[Interface]
+Address = {{ vpn_address }}
+PrivateKey = {{ private_key.contents | b64decode | trim }}
+
+{% for peer in peers %}
+[Peer]
+{% for peer_public_key, endpoint, allowed_ips in peer.items() %}
+PublicKey = {{ peer_public_key }}
+Endpoint = {{ Endpoint }}
+AllowedIPs = {{ allowed_ips }}
+{% endfor %}
+{% endfor %}

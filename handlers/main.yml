@@ -1,0 +1,6 @@
+---
+
+- name: Restart Wireguard service
+  service:
+    name: "wg-quick@{{ interface }}"
+    ensure: restarted
